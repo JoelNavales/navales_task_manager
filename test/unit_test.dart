@@ -265,4 +265,231 @@ void main() {
     });
     test('toggleComplete should throw StateError for unknown task ID', () {});
   });
+
+  group('TaskService - getByStatus', () {
+    late TaskService service;
+    //late Task task;
+
+    setUp(() {
+      service = TaskService();
+    });
+
+    test('getByStatus should return only active tasks', () {
+      final task1 = Task(
+        id: '1',
+        title: 'Active Task',
+        dueDate: DateTime.now(),
+        isCompleted: false,
+      );
+
+      final task2 = Task(
+        id: '2',
+        title: 'Completed Task',
+        dueDate: DateTime.now(),
+        isCompleted: true,
+      );
+
+      service.addTask(task1);
+      service.addTask(task2);
+
+      final result = service.getByStatus(false, completed: false);
+
+      expect(result.length, 1);
+      expect(result.first.isCompleted, false);
+    });
+    test('getByStatus should return only completed tasks', () {
+      final task1 = Task(
+        id: '1',
+        title: 'Active Task',
+        dueDate: DateTime.now(),
+        isCompleted: false,
+      );
+
+      final task2 = Task(
+        id: '2',
+        title: 'Completed Task',
+        dueDate: DateTime.now(),
+        isCompleted: true,
+      );
+
+      service.addTask(task1);
+      service.addTask(task2);
+
+      final result = service.getByStatus(true, completed: true);
+
+      expect(result.length, 1);
+      expect(result.first.isCompleted, true);
+    });
+  });
+
+  group('TaskService — sortByPriority()', () {
+    late TaskService service;
+    setUp(() {
+      service = TaskService();
+    });
+    test(
+      'sortByPriority should return tasks ordered from high to low priority',
+      () {
+        final task1 = Task(
+          id: '1',
+          title: 'Low Priority Task',
+          dueDate: DateTime.now(),
+          priority: Priority.low,
+        );
+
+        final task2 = Task(
+          id: '2',
+          title: 'High Priority Task',
+          dueDate: DateTime.now(),
+          priority: Priority.high,
+        );
+
+        service.addTask(task1);
+        service.addTask(task2);
+
+        final result = service.sortByPriority();
+
+        expect(result.first.priority, Priority.high);
+        expect(result.last.priority, Priority.low);
+      },
+    );
+    test('sortByPriority should not modify the original task list', () {
+      final task1 = Task(
+        id: '1',
+        title: 'Low Priority Task',
+        dueDate: DateTime.now(),
+        priority: Priority.low,
+      );
+
+      final task2 = Task(
+        id: '2',
+        title: 'High Priority Task',
+        dueDate: DateTime.now(),
+        priority: Priority.high,
+      );
+
+      service.addTask(task1);
+      service.addTask(task2);
+
+      final originalList = List<Task>.from(service.allTasks);
+      service.sortByPriority();
+
+      expect(service.allTasks, originalList);
+    });
+  });
+  group('TaskService — sortByDueDate()', () {
+    late TaskService service;
+    setUp(() {
+      service = TaskService();
+    });
+    test('sortByDueDate should return tasks ordered by earliest due date', () {
+      final task1 = Task(
+        id: '1',
+        title: 'Later Task',
+        dueDate: DateTime.now().add(const Duration(days: 2)),
+      );
+
+      final task2 = Task(
+        id: '2',
+        title: 'Earlier Task',
+        dueDate: DateTime.now().add(const Duration(days: 1)),
+      );
+
+      service.addTask(task1);
+      service.addTask(task2);
+
+      final result = service.sortByDueDate();
+
+      expect(result.first.dueDate.isBefore(result.last.dueDate), true);
+    });
+    test('sortByDueDate should not modify the original task list', () {
+      final task1 = Task(
+        id: '1',
+        title: 'Later Task',
+        dueDate: DateTime.now().add(const Duration(days: 2)),
+      );
+
+      final task2 = Task(
+        id: '2',
+        title: 'Earlier Task',
+        dueDate: DateTime.now().add(const Duration(days: 1)),
+      );
+
+      service.addTask(task1);
+      service.addTask(task2);
+
+      final originalList = List<Task>.from(service.allTasks);
+      service.sortByDueDate();
+
+      expect(service.allTasks, originalList);
+    });
+  });
+  group('TaskService — statistics getter', () {
+    late TaskService service;
+    setUp(() {
+      service = TaskService();
+    });
+    // test('statistics should return empty map when there are no tasks', () {
+    //   final stats = service.statistics;
+    //   expect(stats, isEmpty);
+    // });
+    test('statistics should return empty map when there are no tasks', () {
+      final stats = service.statistics;
+
+      expect(stats['total'], 0);
+      expect(stats['completed'], 0);
+      expect(stats['overdue'], 0);
+    });
+    test(
+      'statistics should correctly count mixed active and completed tasks',
+      () {
+        final task1 = Task(
+          id: '1',
+          title: 'Active Task',
+          dueDate: DateTime.now().add(const Duration(days: 1)),
+          isCompleted: false,
+        );
+
+        final task2 = Task(
+          id: '2',
+          title: 'Completed Task',
+          dueDate: DateTime.now().add(const Duration(days: 1)),
+          isCompleted: true,
+        );
+
+        service.addTask(task1);
+        service.addTask(task2);
+
+        final stats = service.statistics;
+
+        expect(stats['total'], 2);
+        expect(stats['completed'], 1);
+        expect(stats['overdue'], 0);
+      },
+    );
+    test('statistics should correctly count overdue tasks', () {
+      final task1 = Task(
+        id: '1',
+        title: 'Overdue Task',
+        dueDate: DateTime.now().subtract(const Duration(days: 1)),
+        isCompleted: false,
+      );
+
+      final task2 = Task(
+        id: '2',
+        title: 'Completed Task',
+        dueDate: DateTime.now().subtract(const Duration(days: 1)),
+        isCompleted: true,
+      );
+
+      service.addTask(task1);
+      service.addTask(task2);
+
+      final stats = service.statistics;
+
+      expect(stats['total'], 2);
+      expect(stats['completed'], 1);
+      expect(stats['overdue'], 1);
+    });
+  });
 }

@@ -24,7 +24,7 @@ class TaskService {
     );
   }
 
-  List<Task> getByStatus({required bool completed}) =>
+  List<Task> getByStatus(bool bool, {required bool completed}) =>
       _tasks.where((t) => t.isCompleted == completed).toList();
 
   List<Task> sortByPriority() {
